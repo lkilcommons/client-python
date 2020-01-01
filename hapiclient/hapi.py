@@ -15,7 +15,7 @@ from hapiclient.util import urlopen, urlretrieve, jsonparse
 
 def subset(meta, params):
     """Extract subset of parameters from meta object returned by hapi()
-    
+
     metar = subset(meta, parameters) modifies meta["parameters"] array so
     it only contains elements for the time variable and the parameters in
     the comma-separated list `parameters`.
@@ -31,7 +31,7 @@ def subset(meta, params):
     for i in range(0, len(p)):
         if p[i] not in pm:
             raise Exception('Parameter %s is not in meta' % p[i])
-    
+
     pa = [meta['parameters'][0]]  # First parameter is always the time parameter
     for i in range(1, len(pm)):
         if pm[i] in p:
@@ -42,7 +42,7 @@ def subset(meta, params):
 
 def server2dirname(server):
     """Convert a server URL to a directory name."""
-    
+
     urld = re.sub(r"https*://", "", server)
     urld = re.sub(r'/', '_', urld)
     return urld
@@ -50,13 +50,13 @@ def server2dirname(server):
 
 def cachedir(*args):
     """HAPI cache directory.
-    
+
     cachedir() returns tempfile.gettempdir() + os.path.sep + 'hapi-data'
 
     cachdir(basedir, server) returns basedir + os.path.sep + server2dirname(server)
     """
     import tempfile
-    
+
     if len(args) == 2:
         # cachedir(base_dir, server)
         return args[0] + os.path.sep + server2dirname(args[1])
@@ -86,7 +86,7 @@ def request2path(*args):
 
 def hapiopts():
     """Return allowed options for hapi().
-    
+
        Used by hapiplot() and hapi().
     """
     # Default options
@@ -103,13 +103,13 @@ def hapiopts():
     """
     format = 'binary' is used by default and CSV used if binary is not available from server.
     This should option should be excluded from the help string.
- 
-    method = 'pandas' is used by default. Other methods 
+
+    method = 'pandas' is used by default. Other methods
     (numpy, pandasnolength, numpynolength) can be used for testing
     CSV read methods. See test/test_hapi.py for comparison.
     This should option should be excluded from the help string.
     """
-    
+
     return opts
 
 
@@ -172,11 +172,11 @@ def hapi(*args, **kwargs):
           Data['scalar'] is a NumPy array of shape (N)
           Data['vector'] is a NumPy array of shape (N,3)
           Data['Time'] is a NumPy array of byte literals with shape (N).
-          
-          Byte literal times can be converted to Python datetimes using 
-          
+
+          Byte literal times can be converted to Python datetimes using
+
           dtarray = hapitime2datetime(Data['Time'])
-        
+
         Data, Meta = hapi(Server, Dataset, Parameters, Start, Stop) returns
         the metadata for parameters in Meta.
 
@@ -207,8 +207,10 @@ def hapi(*args, **kwargs):
 
     # Override defaults
     opts = setopts(hapiopts(), kwargs)
-    
-    log('Running hapi.py version %s' % __version__, opts)
+
+    print(opts)
+
+    #log('Running hapi.py version %s' % __version__, opts)
 
     if nin == 0:  # hapi()
         log('Reading %s' % opts['server_list'], opts)
@@ -236,14 +238,14 @@ def hapi(*args, **kwargs):
         res = urlopen(url)
         meta = jsonparse(res, url)
         return meta
-    
+
     if nin == 4:
         raise ValueError('A stop time is required if a start time is given.')
 
     if nin == 3 or nin == 5:
         # hapi(SERVER, DATASET, PARAMETERS) or
         # hapi(SERVER, DATASET, PARAMETERS, START, STOP)
-                
+
         # urld = url subdirectory of cachedir to store files from SERVER
         urld = cachedir(opts["cachedir"], SERVER)
 
@@ -265,7 +267,7 @@ def hapi(*args, **kwargs):
             # URL for binary request
             urlbin = urlcsv + '&format=binary'
 
-            # Raw CSV and HAPI Binary (no header) will be stored in .csv and 
+            # Raw CSV and HAPI Binary (no header) will be stored in .csv and
             # .bin files. Parsed response of either CSV or HAPI Binary will
             # be stored in a .npy file.
             fname = '%s_%s_%s_%s' % (DATASET, re.sub(',', '-', PARAMETERS),
@@ -274,7 +276,7 @@ def hapi(*args, **kwargs):
             fnamecsv = urld + os.path.sep + fname + '.csv'
             fnamebin = urld + os.path.sep + fname + '.bin'
             fnamenpy = urld + os.path.sep + fname + '.npy'
-            
+
             # fnamepklx will contain additional metadata about the request
             # including d/l time, parsing time, and the location of files.
             fnamepklx = request2path(SERVER, DATASET, PARAMETERS, START, STOP, opts['cachedir'])
@@ -324,7 +326,7 @@ def hapi(*args, **kwargs):
             f = open(fnamejson, 'w')
             json.dump(meta, f, indent=4)
             f.close()
-            
+
             log('Writing %s ' % fnamepkl.replace(urld + '/', ''), opts)
             f = open(fnamepkl, 'wb')
             # protocol=2 used for Python 2.7 compatability.
@@ -343,10 +345,10 @@ def hapi(*args, **kwargs):
             # Read cached data file.
             log('Reading %s ' % fnamenpy.replace(urld + '/', ''), opts)
             f = open(fnamenpy, 'rb')
-            data = np.load(f)                    
+            data = np.load(f)
             f.close()
             # There is a possibility that the fnamenpy file existed but
-            # fnamepklx was not found (b/c removed). In this case, the meta 
+            # fnamepklx was not found (b/c removed). In this case, the meta
             # returned will not have all of the "x_" information inserted below.
             # Code that uses this information needs to account for this.
             return data, meta
@@ -367,10 +369,10 @@ def hapi(*args, **kwargs):
             if 'format' in kwargs and not kwargs['format'] in sformats:
                 warning("hapi", 'Requested transport format "%s" not avaiable '
                                 'from %s. Will use "csv". Available options: %s'
-                              % (opts['format'], SERVER, ', '.join(sformats)))        
+                              % (opts['format'], SERVER, ', '.join(sformats)))
                 opts['format'] = 'csv'
             if not 'binary' in sformats:
-                opts['format'] = 'csv'                
+                opts['format'] = 'csv'
 
         ##################################################################
         # Compute data type variable dt used to read HAPI response into
@@ -387,25 +389,31 @@ def hapi(*args, **kwargs):
         # When missing_length=True the CSV read gets more complicated.
         missing_length = False
 
+        # Determine true order of requested parameters
+        req_params = ['Time']
+        req_params.extend(PARAMETERS.split(','))
+        meta_pnames = [meta["parameters"][i]["name"] for i in range(len(meta["parameters"]))]
+        pname_orig_index = [meta_pnames.index(name) for name in req_params]
+
         # Extract sizes and types of parameters.
-        for i in range(0, len(meta["parameters"])):
-            ptype = str(meta["parameters"][i]["type"])
-            pnames.append(str(meta["parameters"][i]["name"]))
-            if 'size' in meta["parameters"][i]:
-                psizes.append(meta["parameters"][i]['size'])
+        for i,i_param in enumerate(pname_orig_index):
+            ptype = str(meta["parameters"][i_param]["type"])
+            pnames.append(str(meta["parameters"][i_param]["name"]))
+            if 'size' in meta["parameters"][i_param]:
+                psizes.append(meta["parameters"][i_param]['size'])
             else:
                 psizes.append(1)
 
             # For size = [N] case, readers want
             # dtype = ('name', type, N)
-            # not 
+            # not
             # dtype = ('name', type, [N])
             if type(psizes[i]) is list and len(psizes[i]) == 1:
                 psizes[i] = psizes[i][0]
 
             if type(psizes[i]) is list and len(psizes[i]) > 1:
                 psizes[i] = list(reversed(psizes[i]))
-                
+
             # First column of ith parameter.
             cols[i][0] = ss
             # Last column of ith parameter.
@@ -425,15 +433,15 @@ def hapi(*args, **kwargs):
                 # Technically, server response is invalid in this case b/c length attribute
                 # required for all parameters if format=binary.
                 if ptype == 'string' or ptype == 'isotime':
-                    dtype = (pnames[i], 'S' + str(meta["parameters"][i]["length"]), psizes[i])
+                    dtype = (pnames[i], 'S' + str(meta["parameters"][i_param]["length"]), psizes[i])
             else:
                 # When format=csv, length attribute may not be given (but must be given for
                 # first parameter according to the HAPI spec).
                 if ptype == 'string' or ptype == 'isotime':
-                    if 'length' in meta["parameters"][i]:
+                    if 'length' in meta["parameters"][i_param]:
                         # length is specified for parameter in metadata. Use it.
                         if ptype == 'string' or 'isotime':
-                            dtype = (pnames[i], 'S' + str(meta["parameters"][i]["length"]), psizes[i])
+                            dtype = (pnames[i], 'S' + str(meta["parameters"][i_param]["length"]), psizes[i])
                     else:
                         # A string or isotime parameter did not have a length.
                         # Will need to use slower CSV read method.
@@ -449,6 +457,7 @@ def hapi(*args, **kwargs):
                         dtype = (pnames[i], object, psizes[i])
 
             dt.append(dtype)
+
         ##################################################################
 
         # length attribute required for all parameters when serving binary but
@@ -460,7 +469,7 @@ def hapi(*args, **kwargs):
         #    warnings.warn('Requesting CSV instead of binary because of problem with server metadata.')
         #    opts['format'] == 'csv'
 
-        # Read the data. toc0 is time to download (or build buffer); 
+        # Read the data. toc0 is time to download (or build buffer);
         # toc is time to parse (includes download time if buffered IO is used.)
         if opts['format'] == 'binary':
             # HAPI Binary
@@ -524,7 +533,7 @@ def hapi(*args, **kwargs):
                     toc = time.time() - tic
             else:
                 # At least one requested string or isotime parameter does not
-                # have a length in metadata. More work to do to read. 
+                # have a length in metadata. More work to do to read.
                 tic = time.time()
                 if opts['method'] == 'numpy' or opts['method'] == 'numpynolength':
                     # If requested method was numpy, use numpynolength method.
@@ -715,7 +724,7 @@ def hapitime2datetime(Time, **kwargs):
     opts = {'logging': False}
 
     opts = setopts(opts, kwargs)
-    
+
     if type(Time) == list:
         Time = np.asarray(Time)
     if type(Time) == str or type(Time) == bytes:
@@ -723,7 +732,7 @@ def hapitime2datetime(Time, **kwargs):
 
     if type(Time) != np.ndarray:
         print("error")
-    
+
     reshape = False
     if Time.shape[0] != Time.size:
         reshape = True
@@ -818,7 +827,7 @@ def hapitime2datetime(Time, **kwargs):
 
     if re.match(r".*Z$", Time[0]):
         fmt = fmt + "Z"
-    
+
     # TODO: Why not use pandas.to_datetime here with fmt
     for i in range(0, len(Time)):
         pythonDateTime[i] = datetime.strptime(Time[i], fmt)
